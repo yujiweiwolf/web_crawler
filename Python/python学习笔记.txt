@@ -1,0 +1,100 @@
+#!/usr/bin/python3
+import requests
+from bs4 import BeautifulSoup
+import pdfplumber
+import chardet
+import pandas as pd
+
+
+def extract_tables_from_pdf(pdf_path):
+    with pdfplumber.open(pdf_path) as pdf:
+        tables = pdf.pages[0].extract_tables()  # 提取第一页的表格数据
+    return tables
+
+# 发送HTTP请求
+url = 'http://www.sse.com.cn/disclosure/listedinfo/announcement/c/new/2025-01-02/688758_20250102_4N47.pdf'
+response = requests.get(url)
+
+if response.status_code == 200:
+    print("请求成功！")
+    
+    # print(response.text)  # 打印网页内容
+    # 打开一个文件
+    # fo = open("foo.txt", "a+")
+    # fo.write(response.text)
+    
+    # # 关闭打开的文件
+    # fo.close()
+    # with open('output.txt', 'w', encoding='utf-8', errors='replace') as f:
+    #     f.write(response.text)
+    #     f.close()
+    with open('downloaded_pdf.pdf', 'wb') as f:
+        f.write(response.content)
+
+
+     # 读取文件内容
+    with open('downloaded_pdf.pdf', 'rb') as f:
+        raw_data = f.read()
+        result = chardet.detect(raw_data)
+        print(result['encoding'])
+    
+
+    # pdf = pdfplumber.open('downloaded_pdf.pdf')
+    # p0 = pdf.pages[9]
+    # table = p0.extract_table()
+    # df = pd.DataFrame(table[1:],columns=table[0])
+    # print(df)
+
+# 打开PDF文件
+    with pdfplumber.open('downloaded_pdf.pdf') as pdf:
+        # 获取页数
+        num_pages = len(pdf.pages)
+        print(f"Number of pages: {num_pages}")
+        
+    # # 读取每一页的内容
+    # for page_num in range(num_pages):
+    #     page = pdf.pages[page_num]
+    #     text = page.extract_text()
+    #     print(f"Page {page_num+1}:")
+    #     print(text)
+
+
+    # with open('downloaded_pdf.pdf', 'r', encoding='utf-8', errors='ignore') as file:
+    #     lines = file.readlines()
+    #     for line in lines:
+    #         print(line.strip())  # strip()方法用于去除行末换行符
+    
+    # pdf_path = 'downloaded_pdf.pdf'
+    # tables = extract_tables_from_pdf(pdf_path)
+    # for table in tables:
+    #     print(table)  # 打印每个表格的数据
+
+    # 读取pdf文件，保存为pdf实例
+    pdf =  pdfplumber.open("downloaded_pdf.pdf") 
+    
+    # 访问第二页
+    first_page = pdf.pages[9]
+    
+    # 自动读取表格信息，返回列表
+    table = first_page.extract_table()
+    
+    print(table)
+
+else:
+    print(f"请求失败，状态码：{response.status_code}")
+
+# # 解析HTML内容
+# soup = BeautifulSoup(response.text, 'html.parser')
+
+# # 提取数据
+# title = soup.title.text
+# print(f'网页标题: {title}')
+
+# # 提取所有链接
+# links = soup.find_all('a')
+# for link in links:
+#     print(link.get('href'))
+
+
+
+

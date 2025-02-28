@@ -1,0 +1,194 @@
+#!/usr/bin/python3
+import requests
+from bs4 import BeautifulSoup
+import pdfplumber
+import chardet
+import pandas as pd
+import os
+import sys
+import json
+from collections import deque
+
+def traverse_json(data, my_list):
+    queue = deque([(data, '')])
+    while queue:
+        value, prefix = queue.popleft()
+        if isinstance(value, dict):
+            for key, val in value.items():
+                queue.append((val, prefix + f'["{key}"]'))
+        elif isinstance(value, list):
+            for i, val in enumerate(value):
+                queue.append((val, prefix + f'[{i}]'))
+        else:
+            print(prefix, ':', value)
+            if (prefix.find("URL")!= -1):
+                my_list.append(value)
+
+def write_csv_from_url(url):
+    print(url)
+    file_name = 'downloaded_pdf.pdf'
+    csv_name = '网下初步配售结果及网上中签结果公告.csv'
+    fo = open(csv_name, "a+")
+    response = requests.get(url)
+    if response.status_code == 200:
+        print("请求成功！")
+
+        with open('downloaded_pdf.pdf', 'wb') as f:
+            f.write(response.content)
+            f.close()
+
+        pdf =  pdfplumber.open(file_name)
+        num_pages = len(pdf.pages)
+        print(f"Number of pages: {num_pages}")
+        title_flag = False
+        page = pdf.pages[0]
+        text = page.extract_text()
+        # print(text[0])
+        position = text.find("特别提示")
+        if position != -1:
+            fo.write(text[0:position])
+
+        for page in pdf.pages:
+            # first_page = pdf.pages[9]
+            # 自动读取表格信息，返回列表
+            table = page.extract_table()
+            # print(f"Number of tables: {len(table)}")
+            if table:
+                flag = False
+                index = 0
+                for row in table:
+                    index = index + 1
+                    if (index == 1) :
+                        if (len(row) == 10) :
+                            if ((str(row[1]) == "投资者名称")& (str(row[2]) == "配售对象名称")):
+                                flag = True
+                                print ("第一行的长度 %d" % len(row))
+                                if (title_flag == False) :
+                                    result = ', '.join(row)
+                                    fo.write(str(result).replace(" ", "").replace("\n", ""))
+                                    fo.write("\n")
+                                    title_flag = True
+                    else :
+                        if (flag & (row[len(row) - 1] == "A")) :
+                            # print(row)
+                            result = ', '.join(row)
+                            fo.write(str(result).replace(" ", "").replace("\n", ""))
+                            fo.write("\n")
+                        if (len(row) != 10):
+                            flag = False;   
+
+    fo.close()
+
+os.system('clear')
+
+
+sh_Referer = "http://www.sse.com.cn"
+url = 'http://query.sse.com.cn/security/stock/queryCompanyBulletinNew.do'
+params = {
+    "BULLETIN_TYPE": "",
+    "START_DATE": "2024-11-24",
+    "END_DATE": "2025-02-24",
+    "SECURITY_CODE": "",
+    "TITLE": "网下初步配售结果及网上中签结果",
+    "beginDate": "",
+    "endDate": "",
+    "isNew": False,
+    "isPagination": "true",
+    "jsonCallBack": "jsonpCallback75011929",
+    "keyWord": "",
+    "stockType": "",
+    "pageHelp.pageSize": 25,
+    "pageHelp.cacheSize": 1,
+    "pageHelp.pageNo": 1,
+    "pageHelp.beginPage": 1,
+    "pageHelp.endPage": 1
+}
+headers = {
+    "Host": "query.sse.com.cn",
+    "Referer": sh_Referer,
+    "Cookie": "gdp_user_id=gioenc-966e7g6g%2Cg38c%2C5gcg%2C9350%2C9g7471462e46; JSESSIONID=5D7B8A09E1982A04E8CBF17B66D6A89E; ba17301551dcbaf9_gdp_session_id=06e0a191-8f18-48c8-86ac-f801799597fa; ba17301551dcbaf9_gdp_session_id_sent=06e0a191-8f18-48c8-86ac-f801799597fa; ba17301551dcbaf9_gdp_sequence_ids={%22globalKey%22:629%2C%22VISIT%22:8%2C%22PAGE%22:21%2C%22VIEW_CLICK%22:602%2C%22CUSTOM%22:2}",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+}
+r = requests.get(url=url, params=params, headers=headers)
+print(r.status_code)
+if r.status_code == 200:
+    print("请求成功！")
+    result = r.text
+    start = result.find("({")
+    json_data = r.text[start + 1 : len(result) - 1]
+    print("\n")
+    format_data = json.loads(json_data)
+    my_list = []
+    traverse_json(format_data, my_list)
+    unique_list = list(set(my_list))
+    for value in unique_list:
+        # print(sh_Referer + value)
+        write_csv_from_url(sh_Referer + value)
+ 
+# write_csv_from_url("http://www.sse.com.cn/disclosure/listedinfo/announcement/c/new/2025-01-08/688583_20250108_N93P.pdf")
+# url = 'http://www.sse.com.cn/disclosure/listedinfo/announcement/c/new/2025-01-02/688758_20250102_4N47.pdf'
+# url = 'http://www.sse.com.cn/disclosure/listedinfo/announcement/c/new/2025-01-15/688545_20250115_POZ5.pdf'
+
+# if len(sys.argv) > 1:
+    # file_name = 'downloaded_pdf.pdf'
+    # csv_name = '网下初步配售结果及网上中签结果公告.csv'
+    # fo = open(csv_name, "a+")
+#     print("第二个参数是:", sys.argv[1])
+#     url = sys.argv[1]
+#     response = requests.get(url)
+
+#     if response.status_code == 200:
+#         print("请求成功！")
+
+#         with open('downloaded_pdf.pdf', 'wb') as f:
+#             f.write(response.content)
+#             f.close()
+
+#         pdf =  pdfplumber.open(file_name)
+#         num_pages = len(pdf.pages)
+#         print(f"Number of pages: {num_pages}")
+#         title_flag = False
+#         page = pdf.pages[0]
+#         text = page.extract_text()
+#         # print(text[0])
+#         position = text.find("特别提示")
+#         if position != -1:
+#             fo.write(text[0:position])
+
+
+
+#         for page in pdf.pages:
+#             # first_page = pdf.pages[9]
+#             # 自动读取表格信息，返回列表
+#             table = page.extract_table()
+#             # print(f"Number of tables: {len(table)}")
+#             if table:
+#                 flag = False
+#                 index = 0
+#                 for row in table:
+#                     index = index + 1
+#                     if (index == 1) :
+#                         if ((len(row) == 10) & (str(row[1]) == "投资者名称")& (str(row[2]) == "配售对象名称")) :
+#                             flag = True
+#                             print ("第一行的长度 %d" % len(row))
+#                             if (title_flag == False) :
+#                                 result = ', '.join(row)
+#                                 fo.write(str(result).replace(" ", "").replace("\n", ""))
+#                                 fo.write("\n")
+#                                 title_flag = True
+#                     else :
+#                         if (flag & (row[len(row) - 1] == "A")) :
+#                             # print(row)
+#                             result = ', '.join(row)
+#                             fo.write(str(result).replace(" ", "").replace("\n", ""))
+#                             fo.write("\n")
+#                         if (len(row) != 10):
+#                             flag = False;   
+
+#         fo.close()
+
+
+
+
+
+

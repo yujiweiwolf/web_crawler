@@ -1,0 +1,217 @@
+#!/usr/bin/python3
+import requests
+from bs4 import BeautifulSoup
+import pdfplumber
+import chardet
+import pandas as pd
+import os
+import sys
+import json
+
+def recurse_json(data):
+    if isinstance(data, dict):
+        for key, value in data.items():
+            print(f"Key: {key}")
+            recurse_json(value)
+    elif isinstance(data, list):
+        for item in data:
+            recurse_json(item)
+    else:
+        print(f"Value: {data}")
+
+os.system('clear')
+
+
+# 打印所有命令行参数
+for arg in sys.argv:
+    print(arg)
+
+file_name = 'downloaded_pdf.pdf'
+csv_name = '网下初步配售结果及网上中签结果公告.csv'
+fo = open(csv_name, "w+")   
+
+# 发送HTTP请求
+# url = 'http://www.sse.com.cn/disclosure/listedinfo/announcement/c/new/2025-01-02/688758_20250102_4N47.pdf'
+# url = 'http://www.sse.com.cn/disclosure/listedinfo/announcement/c/new/2025-01-15/688545_20250115_POZ5.pdf'
+
+url = 'http://query.sse.com.cn/security/stock/queryCompanyBulletinNew.do'
+params = {
+    "BULLETIN_TYPE": "",
+    "START_DATE": "2024-11-24",
+    "END_DATE": "2025-02-24",
+    "SECURITY_CODE": "",
+    "TITLE": "网下初步配售结果及网上中签结果",
+    "beginDate": "",
+    "endDate": "",
+    "isNew": False,
+    "isPagination": "true",
+    "jsonCallBack": "jsonpCallback75011929",
+    "keyWord": "",
+    "stockType": 2,
+    "pageHelp.pageSize": 25,
+    "pageHelp.cacheSize": 1,
+    "pageHelp.pageNo": 1,
+    "pageHelp.beginPage": 1,
+    "pageHelp.endPage": 1
+}
+headers = {
+    "Host": "query.sse.com.cn",
+    "Referer": "http://www.sse.com.cn/",
+    "Cookie": "gdp_user_id=gioenc-966e7g6g%2Cg38c%2C5gcg%2C9350%2C9g7471462e46; JSESSIONID=5D7B8A09E1982A04E8CBF17B66D6A89E; ba17301551dcbaf9_gdp_session_id=06e0a191-8f18-48c8-86ac-f801799597fa; ba17301551dcbaf9_gdp_session_id_sent=06e0a191-8f18-48c8-86ac-f801799597fa; ba17301551dcbaf9_gdp_sequence_ids={%22globalKey%22:629%2C%22VISIT%22:8%2C%22PAGE%22:21%2C%22VIEW_CLICK%22:602%2C%22CUSTOM%22:2}",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+}
+referer = 'http://www.sse.com.cn/'
+# r = requests.get(url=url, params=params, headers=headers)
+r = requests.get(url=url, params=params, headers={'Referer': referer})
+print(r.status_code)
+if r.status_code == 200:
+    print("请求成功！")
+    result = r.text
+    print(result)
+    start = result.find("({")
+    json_data = r.text[start + 1 : len(result) - 1]
+    print("\n")
+    # print(json_data)
+    format_data = json.loads(json_data)
+    # print(format_data)
+    # recurse_json(format_data)
+    for key, value in format_data.items():
+        print(f"{key}: {value}")
+        if isinstance(value, dict):
+            print("is dict\n")
+            for a, b in value.items():
+                print(f"{a}: {b}")
+
+
+# url = 'http://query.sse.com.cn/security/stock/queryCompanyBulletinNew.do?jsonCallBack=jsonpCallback19249005&isPagination=true&pageHelp.pageSize=25&pageHelp.cacheSize=1&START_DATE=2024-11-24&END_DATE=2025-02-24&SECURITY_CODE=&TITLE=&BULLETIN_TYPE=&stockType=1&pageHelp.pageNo=1&pageHelp.beginPage=1&pageHelp.endPage=1&_=1740376754995'
+# referer = 'http://www.sse.com.cn/'
+# response = requests.get(url=url, headers={'Referer': referer})
+# print(response.text)
+
+#print(response.json())
+# start = response.text.find("({")
+# json_data = response.text[start:]
+# print(json_data)
+#format_data = json.loads(json_data)
+# print(format_data)
+# json_data = response.text.split('(')[-1].replace(')', '')
+# format_data = json.loads(json_data)
+
+
+# for every_report in format_data['result']:
+#     source_pdf_url = 'http://static.sse.com.cn' + every_report['URL']
+#     pdf_url = source_pdf_url.split('<br>')[0]
+#     # print(pdf_url)
+#     file_name = every_report['TITLE'].split('<br>')[0] + '.pdf'
+#     # print(file_name)
+#     pdf_file = requests.get(pdf_url, stream=True)
+#     with open(file_name, 'wb') as f:
+#         # f.write(pdf_file.content)
+#         for chunk in pdf_file.iter_content(1024):
+#             f.write(chunk)
+#         print('上市公司报告：%s' % file_name + "已经完成下载")
+
+
+
+# url = "https://movie.douban.com/j/search_subjects"
+# params = {
+#     "type":"movie",
+#     "tag": "剧情",
+#     "page_limit": 50,
+#     "page_start":0
+# }
+# headers = {
+#     "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+# }
+# r = requests.get(url=url, params=params, headers=headers)
+# print(r.status_code)
+# print(r.json())
+
+# html_content = response.text
+# soup = BeautifulSoup(html_content, 'html.parser')
+# table = soup.find('table')
+# dfs = pd.read_html(str(table))
+# df = dfs[0]
+# print(df)
+
+# if response.status_code == 200:
+#     print("请求成功！")
+#     # 解析HTML内容
+#     soup = BeautifulSoup(response.text, 'html.parser')
+
+#     # 提取数据
+#     title = soup.title.text
+#     print(f'网页标题: {title}')
+
+#     # 提取所有链接
+#     links = soup.find_all('a')
+#     for link in links:
+#         print(link.get('href'))
+
+    # print(response.content)
+
+    # with open('downloaded_pdf.pdf', 'wb') as f:
+    #     f.write(response.content)
+
+ 
+
+# if len(sys.argv) > 1:
+#     print("第二个参数是:", sys.argv[1])
+#     url = sys.argv[1]
+#     response = requests.get(url)
+
+#     if response.status_code == 200:
+#         print("请求成功！")
+
+#         with open('downloaded_pdf.pdf', 'wb') as f:
+#             f.write(response.content)
+#             f.close()
+
+#         pdf =  pdfplumber.open(file_name)
+#         num_pages = len(pdf.pages)
+#         print(f"Number of pages: {num_pages}")
+#         title_flag = False
+#         page = pdf.pages[0]
+#         text = page.extract_text()
+#         # print(text[0])
+#         position = text.find("特别提示")
+#         if position != -1:
+#             fo.write(text[0:position])
+
+
+
+#         for page in pdf.pages:
+#             # first_page = pdf.pages[9]
+#             # 自动读取表格信息，返回列表
+#             table = page.extract_table()
+#             # print(f"Number of tables: {len(table)}")
+#             if table:
+#                 flag = False
+#                 index = 0
+#                 for row in table:
+#                     index = index + 1
+#                     if (index == 1) :
+#                         if ((len(row) == 10) & (str(row[1]) == "投资者名称")& (str(row[2]) == "配售对象名称")) :
+#                             flag = True
+#                             print ("第一行的长度 %d" % len(row))
+#                             if (title_flag == False) :
+#                                 result = ', '.join(row)
+#                                 fo.write(str(result).replace(" ", "").replace("\n", ""))
+#                                 fo.write("\n")
+#                                 title_flag = True
+#                     else :
+#                         if (flag & (row[len(row) - 1] == "A")) :
+#                             # print(row)
+#                             result = ', '.join(row)
+#                             fo.write(str(result).replace(" ", "").replace("\n", ""))
+#                             fo.write("\n")
+#                         if (len(row) != 10):
+#                             flag = False;   
+
+#         fo.close()
+
+
+
+
+
+
