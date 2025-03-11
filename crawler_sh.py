@@ -66,26 +66,25 @@ def write_csv_from_url(url, code, name,fo):
             table = page.extract_table()
             print("page index: %d" % page.page_number)
             if table:
-                index = 0
                 for row in table:
-                    index = index + 1
-                    if (len(row) == 10) :
-                        # print(row)
-                        if (index == 1) :                        
-                            # print ("第一行的长度 %d" % len(row))
-                            if ((str(row[1]) == "投资者名称")& (str(row[2]) == "配售对象名称")):
-                                flag = True                            
-                        else :
-                            if (flag & (row[len(row) - 1] == "A")) :
-                                accout = str(row[2]).replace(",", "").replace("\n", "")
-                                volume = str(row[5]).replace(",", "").replace("\n", "")
-                                amount = str(row[8]).replace(",", "").replace("\n", "")
-                                result = code + "," + name + "," + accout + "," + volume + "," + amount
-                                fo.write(str(result).replace(" ", "").replace("\n", "") + "\n")
-                                total_num += 1                   
-                    else :
-                        flag = False
-    print("code: %s, records: %d" % (code,total_num))                        
+                    if ((row[len(row) - 1] == "A") or (row[len(row) - 1] == "A类")) :
+                        if (len(row) == 8) :
+                            # print(row, "length: ", len(row))
+                            accout = str(row[2]).replace(",", "").replace("\n", "")
+                            volume = str(row[5]).replace(",", "").replace("\n", "")
+                            amount = str(row[6]).replace(",", "").replace("\n", "")
+                            result = code + "," + name + "," + accout + "," + volume + "," + amount
+                            fo.write(str(result).replace(" ", "").replace("\n", "") + "\n")
+                            total_num += 1
+                        elif (len(row) == 10) :
+                            # print(row, "length: ", len(row))
+                            accout = str(row[2]).replace(",", "").replace("\n", "")
+                            volume = str(row[5]).replace(",", "").replace("\n", "")
+                            amount = str(row[8]).replace(",", "").replace("\n", "")
+                            result = code + "," + name + "," + accout + "," + volume + "," + amount
+                            fo.write(str(result).replace(" ", "").replace("\n", "") + "\n")
+                            total_num += 1
+        print("code: %s, records: %d" % (code,total_num))
 
 
 os.system('clear')
