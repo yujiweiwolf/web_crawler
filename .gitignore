@@ -17,17 +17,10 @@
 !*.docx
 !*.sh
 
-!Makefile*
-!Dockerfile*
-!CMakeLists.txt
-
-!lib/**/*.dll
-!lib/**/*.lib
-!lib/**/*.so
-!lib/**/*.xml
-!lib/**/*.dtd
+!*.py
 
 cmake-build-debug/
 
 新股网下发行获配明细表.csv
 downloaded_pdf.pdf
+pdf_file/

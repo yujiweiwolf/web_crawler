@@ -10,6 +10,7 @@ import json
 from collections import deque
 import re
 from datetime import datetime, timedelta
+import glob
 
 class Employee:
     def __init__(self, name, code, date, url):
@@ -47,45 +48,41 @@ def traverse_json(data, my_list):
                     my_list.append(empl)
 
 def write_csv_from_url(url, code, name,fo):
-    print(url)
+    # print(url)
+    pdf_files = glob.glob('pdf_file/*.pdf')
+    print(pdf_files)
+    std_code = code[1:6]
+    for file_name in pdf_files:
+        if file_name.find(std_code) != -1:
+            print(f"Processing file: {file_name}")
+            pdf =  pdfplumber.open(file_name)
+            num_pages = len(pdf.pages)
+            print(f"Number of pages: {num_pages}")
 
-    response = requests.get(url)
-    if response.status_code == 200:
-        print("请求成功！")
-        print(response.content)
-
-        with open('downloaded_pdf.pdf', 'wb') as f:
-            f.write(response.content)
-            f.close()
-
-        pdf =  pdfplumber.open(file_name)
-        num_pages = len(pdf.pages)
-        print(f"Number of pages: {num_pages}")
-
-        total_num = 0
-        for page in pdf.pages:
-            table = page.extract_table()
-            print("page index: %d" % page.page_number)
-            if table:
-                for row in table:
-                    if ((row[len(row) - 1] == "A") or (row[len(row) - 1] == "A类")) :
-                        if (len(row) == 8) :
-                            # print(row, "length: ", len(row))
-                            accout = str(row[2]).replace(",", "").replace("\n", "")
-                            volume = str(row[5]).replace(",", "").replace("\n", "")
-                            amount = str(row[6]).replace(",", "").replace("\n", "")
-                            result = code + "," + name + "," + accout + "," + volume + "," + amount
-                            fo.write(str(result).replace(" ", "").replace("\n", "") + "\n")
-                            total_num += 1
-                        elif (len(row) == 10) :
-                            # print(row, "length: ", len(row))
-                            accout = str(row[2]).replace(",", "").replace("\n", "")
-                            volume = str(row[5]).replace(",", "").replace("\n", "")
-                            amount = str(row[8]).replace(",", "").replace("\n", "")
-                            result = code + "," + name + "," + accout + "," + volume + "," + amount
-                            fo.write(str(result).replace(" ", "").replace("\n", "") + "\n")
-                            total_num += 1
-        print("code: %s, records: %d" % (code,total_num))
+            total_num = 0
+            for page in pdf.pages:
+                table = page.extract_table()
+                print("page index: %d" % page.page_number)
+                if table:
+                    for row in table:
+                        if ((row[len(row) - 1] == "A") or (row[len(row) - 1] == "A类")) :
+                            if (len(row) == 8) :
+                                # print(row, "length: ", len(row))
+                                accout = str(row[2]).replace(",", "").replace("\n", "")
+                                volume = str(row[5]).replace(",", "").replace("\n", "")
+                                amount = str(row[6]).replace(",", "").replace("\n", "")
+                                result = code + "," + name + "," + accout + "," + volume + "," + amount
+                                fo.write(str(result).replace(" ", "").replace("\n", "") + "\n")
+                                total_num += 1
+                            elif (len(row) == 10) :
+                                # print(row, "length: ", len(row))
+                                accout = str(row[2]).replace(",", "").replace("\n", "")
+                                volume = str(row[5]).replace(",", "").replace("\n", "")
+                                amount = str(row[8]).replace(",", "").replace("\n", "")
+                                result = code + "," + name + "," + accout + "," + volume + "," + amount
+                                fo.write(str(result).replace(" ", "").replace("\n", "") + "\n")
+                                total_num += 1
+            print("code: %s, records: %d" % (code,total_num))
 
 
 os.system('clear')
@@ -167,6 +164,6 @@ if r.status_code == 200:
             print("code: %s 存在，不写入" % value.code)
         else:
             print("code: %s 不存在，写入" % value.code)
-            # write_csv_from_url(sh_Referer + value.url, value.code, value.name, fo)
+            write_csv_from_url(sh_Referer + value.url, value.code, value.name, fo)
         #break
 fo.close()
